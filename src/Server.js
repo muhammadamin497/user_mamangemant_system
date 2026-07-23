@@ -1,7 +1,11 @@
- const app=require("./index")
- 
-const PORT = 5000;
+const express = require("express");
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+const app = express();
+
+app.get("/", (req, res) => {
+  res.send("Server running");
+});
+
+app.listen(5000, () => {
+  console.log('http://localhost:5000');
 });
