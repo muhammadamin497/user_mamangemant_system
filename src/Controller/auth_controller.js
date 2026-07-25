@@ -84,7 +84,11 @@ exports.login = async (req, res) => {
             message: error.message
         });
     }
-};
+};      
+
+//==============
+// logout logic here 
+//==============
 
 exports.logout = async (req, res) => {
     res.json({
