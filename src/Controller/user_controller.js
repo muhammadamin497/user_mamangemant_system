@@ -1,9 +1,15 @@
+
 const User = require('../model/usermodle');
+
+const User = require("../model/usermodle");
+
 
 // Create User
 const createUser = async (req, res) => {
   try {
     const { name, email, password, role, avatar } = req.body;
+console.log("Search:", req.query.search);
+    
 
     const user = await User.create({
       name,
@@ -30,21 +36,159 @@ const createUser = async (req, res) => {
 };
 
 
-// Get All Users
+// Get Users with Search + Filtering + Sorting + Pagination
 const getUsers = async (req, res) => {
    
     
   try {
+
       console.log("Database:", User.db.name);
     console.log("Collection:", User.collection.name);
    
     
 
+    // =========================
+    // 1. Get Query Parameters
+    // =========================
+
+    const search = req.query.search || "";
+    const role = req.query.role || "";
+    const status = req.query.status || "";
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    const sort = req.query.sort || "newest";
+
+
+    // =========================
+    // 2. Calculate Skip
+    // =========================
+
+    const skip = (page - 1) * limit;
+
+
+    // =========================
+    // 3. Create Filter Query
+    // =========================
+
+    const filterQuery = {};
+
+
+    // =========================
+    // 4. Search
+    // =========================
+
+    if (search) {
+      filterQuery.$or = [
+        {
+          name: {
+            $regex: search,
+            $options: "i"
+          }
+        },
+        {
+          email: {
+            $regex: search,
+            $options: "i"
+          }
+        }
+      ];
+    }
+
+
+    // =========================
+    // 5. Role Filter
+    // =========================
+
+    if (role) {
+      filterQuery.role = role;
+    }
+
+
+    // =========================
+    // 6. Status Filter
+    // =========================
+
+    if (status) {
+      filterQuery.status = status;
+    }
+
+
+    // =========================
+    // 7. Sorting
+    // =========================
+
+    let sortQuery = {};
+
+    if (sort === "newest") {
+      sortQuery = { createdAt: -1 };
+    }
+
+    if (sort === "oldest") {
+      sortQuery = { createdAt: 1 };
+    }
+
+    if (sort === "name-asc") {
+      sortQuery = { name: 1 };
+    }
+
+    if (sort === "name-desc") {
+      sortQuery = { name: -1 };
+    }
+
+
+    // =========================
+    // 8. Get Users
+    // =========================
+
+    const users = await User.find(filterQuery)
+      .sort(sortQuery)
+      .skip(skip)
+      .limit(limit);
+
+
+    // =========================
+    // 9. Count Users
+    // =========================
+
+    const totalUsers = await User.countDocuments(filterQuery);
+
+
+    // =========================
+    // 10. Calculate Total Pages
+    // =========================
+
+    const totalPages = Math.ceil(totalUsers / limit);
+
+
+    // =========================
+    // 11. Response
+    // =========================
+
     const users = await User.find();
      
     res.status(200).json({
       success: true,
-      users,
+
+      filters: {
+        search,
+        role,
+        status
+      },
+
+      sort,
+
+      pagination: {
+        currentPage: page,
+        limit,
+        totalUsers,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1
+      },
+
+      users
     });
       console.log(users); // database me save hone wala data
 
@@ -52,12 +196,14 @@ const getUsers = async (req, res) => {
     
 
   } catch (error) {
+
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message
     });
+
   }
-};
+}; 
 
 
 // Get Single User
