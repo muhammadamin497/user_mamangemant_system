@@ -1,4 +1,14 @@
 const express = require("express");
+
+
+const app = express();
+
+app.get("/", (req, res) => {
+  res.send("Server running");
+});
+
+app.listen(5000, () => {
+  console.log('http://localhost:5000');
 const dotenv = require("dotenv");
 const connectDB=require("./Config/db")
 
@@ -23,6 +33,6 @@ app.use("/api/admin", adminRoutes);
 app.use(errorHandler);
 
 app.listen( 3000,() => {
-  console.log('http://localhost:3000');
-
+  console.log('http://localhost:3000')
+  
 });
